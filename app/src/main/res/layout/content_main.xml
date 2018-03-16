@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="hu.macsodev.froccsautomata.MainActivity"
+    tools:layout_editor_absoluteY="100dp"
+    tools:showIn="@layout/activity_main">
+
+    <SeekBar
+        android:id="@+id/seekbar_arany"
+        android:layout_width="250dp"
+        android:layout_height="100dp"
+        android:max="100"
+        android:progress="50"
+        android:rotation="270"
+        tools:layout_editor_absoluteX="126dp"
+        tools:layout_editor_absoluteY="149dp" />
+
+    <TextView
+        android:id="@+id/textView_arany"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Arány"
+        android:textAlignment="center"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="466dp" />
+
+    <TextView
+        android:id="@+id/textView_mennyiseg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mennyiség"
+        android:textAlignment="center"
+        tools:layout_editor_absoluteX="310dp"
+        tools:layout_editor_absoluteY="466dp" />
+
+    <Button
+        android:id="@+id/button_kuldes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="40dp"
+        android:text="Küldés"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/seekbar_arany"
+        app:layout_constraintVertical_bias="0.103" />
+
+    <SeekBar
+        android:id="@+id/seekbar_mennyiseg"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="264dp"
+        android:layout_height="46dp"
+        android:max="4"
+        android:progress="2"
+        android:rotation="270"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="188dp" />
+
+    <TextView
+        android:id="@+id/textView_arany_allas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/button_kuldes"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/seekbar_arany" />
+
+    <abak.tr.com.boxedverticalseekbar.BoxedVertical
+        android:id="@+id/bv_arany"
+        android:layout_width="25dp"
+        android:layout_height="250dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        app:backgroundColor="#7fe8fa"
+
+        app:cornerRadius="30"
+        app:defaultValue="50"
+        app:imageEnabled="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:max="100"
+        app:progressColor="#ff4141"
+        app:step="1"
+        app:textBottomPadding="20"
+        app:textColor="#ffffff"
+        app:textEnabled="true"
+        app:textSize="14sp"
+        app:touchDisabled="false" />
+
+</android.support.constraint.ConstraintLayout>
