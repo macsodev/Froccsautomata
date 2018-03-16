@@ -9,15 +9,16 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
-import android.view.MenuItem;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
     String arduinoBtName;
     TextView statusz;
     Boolean btPerm;
+    ImageView ivPohar;
+    Animation animFadeOut;
+    Animation animFadeIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,14 +66,15 @@ public class MainActivity extends AppCompatActivity {
         kuldes = findViewById(R.id.button_kuldes);
         fabmenu=findViewById(R.id.menu);
         statusz = findViewById(R.id.tv_status);
-
-
-
-
+        ivPohar = findViewById(R.id.iv_pohar);
 
         arduinoBtName = "froccsautomata";
         found = false;
         btPerm = false;
+
+        animFadeOut = AnimationUtils.loadAnimation(this, R.anim.fadeout);
+
+        animFadeIn = AnimationUtils.loadAnimation(this, R.anim.fadein);
 
         beallitasok();
         btSettings();
@@ -169,8 +174,25 @@ public class MainActivity extends AppCompatActivity {
         double mennyiseg_szoda_bd = bd_szoda.doubleValue();
 
         tvAranyAllas.setText(mennyiseg+"dl fröccs, "+arany+"% ("+ mennyiseg_bor_bd +" dl) bor / "+arany_szoda+"% ("+ mennyiseg_szoda_bd + " dl) szóda");
+
+        // IV pohar beallitasok
+        setIvPoharArany(arany);
+
     }
 
+    public void setIvPoharArany(int arany){
+        if(arany<10) ivPohar.setImageResource(R.mipmap.glass_arany_progress_0_fg);
+        else if(arany>=10 && arany <20) ivPohar.setImageResource(R.mipmap.glass_arany_progress_10_fg);
+        else if(arany >=20 && arany<30) ivPohar.setImageResource(R.mipmap.glass_arany_progress_20_fg);
+        else if(arany >=30 && arany<40) ivPohar.setImageResource(R.mipmap.glass_arany_progress_30_fg);
+        else if(arany >=40 && arany<50) ivPohar.setImageResource(R.mipmap.glass_arany_progress_40_fg);
+        else if(arany >=50 && arany<60) ivPohar.setImageResource(R.mipmap.glass_arany_progress_50_fg);
+        else if(arany >=60 && arany<70) ivPohar.setImageResource(R.mipmap.glass_arany_progress_60_fg);
+        else if(arany >=70 && arany<80) ivPohar.setImageResource(R.mipmap.glass_arany_progress_70_fg);
+        else if(arany >=80 && arany<90) ivPohar.setImageResource(R.mipmap.glass_arany_progress_80_fg);
+        else if(arany >=90 && arany<100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_90_fg);
+        else if(arany >=100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
+    }
     public int btSettings(){
         bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
         PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");//Serial Port Service ID
