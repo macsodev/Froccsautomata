@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import abak.tr.com.boxedverticalseekbar.BoxedVertical;
-
 public class MainActivity extends AppCompatActivity {
 
     TextView tvAranyAllas;
@@ -51,8 +49,6 @@ public class MainActivity extends AppCompatActivity {
     TextView statusz;
     Boolean btPerm;
 
-    BoxedVertical bvArany;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,28 +62,6 @@ public class MainActivity extends AppCompatActivity {
         kuldes = findViewById(R.id.button_kuldes);
         fabmenu=findViewById(R.id.menu);
         statusz = findViewById(R.id.tv_status);
-
-
-
-
-        bvArany = (BoxedVertical)findViewById(R.id.bv_arany);
-
-        bvArany.setOnBoxedPointsChangeListener(new BoxedVertical.OnValuesChangeListener() {
-            @Override
-            public void onPointsChanged(BoxedVertical boxedPoints, final int value) {
-                bvOnPointsChanged();
-            }
-
-            @Override
-            public void onStartTrackingTouch(BoxedVertical boxedPoints) {
-                Toast.makeText(MainActivity.this, "onStartTrackingTouch", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onStopTrackingTouch(BoxedVertical boxedPoints) {
-                Toast.makeText(MainActivity.this, "onStopTrackingTouch", Toast.LENGTH_SHORT).show();
-            }
-        });
 
 
 
@@ -108,25 +82,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void bvOnPointsChanged(){
-        int arany = bvArany.getValue();
-        int arany_szoda = bvArany.getMax()-arany;
-        int mennyiseg = sbMennyiseg.getProgress() + 1;
-        float mennyiseg_bor = ((float)mennyiseg*arany)/100;
 
-        //bor mennyiseg 1 tizedesjegyre
-        BigDecimal bd_bor = new BigDecimal(mennyiseg_bor);
-        bd_bor = bd_bor.setScale(1, RoundingMode.HALF_UP);
-        double mennyiseg_bor_bd = bd_bor.doubleValue();
-
-        //szoda mennyiseg 1 tizedesjegyre
-        BigDecimal bd_szoda = new BigDecimal(mennyiseg - mennyiseg_bor_bd);
-        bd_szoda = bd_szoda.setScale(1, RoundingMode.HALF_UP);
-        double mennyiseg_szoda_bd = bd_szoda.doubleValue();
-
-        tvAranyAllas.setText(mennyiseg+"dl fröccs, "+arany+"% ("+ mennyiseg_bor_bd +" dl) bor / "+arany_szoda+"% ("+ mennyiseg_szoda_bd + " dl) szóda");
-
-    }
 
     public void beallitasok(){
         csuszkaModosit();
