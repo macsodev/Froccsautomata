@@ -1,11 +1,13 @@
 package hu.macsodev.froccsautomata;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -53,6 +55,16 @@ public class MainActivity extends AppCompatActivity {
     Animation animFadeOut;
     Animation animFadeIn;
 
+    Button On, Off, Discnt, Abt;
+    String address = null;
+    private Set<BluetoothDevice> pairedDevices;
+    private ProgressDialog progress;
+    BluetoothAdapter myBluetooth = null;
+    BluetoothSocket btSocket = null;
+    private boolean isBtConnected = false;
+    //SPP UUID. Look for it
+    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,16 +80,26 @@ public class MainActivity extends AppCompatActivity {
         statusz = findViewById(R.id.tv_status);
         ivPohar = findViewById(R.id.iv_pohar);
 
-        arduinoBtName = "froccsautomata";
+        arduinoBtName = "HC-05";
+
+        Intent newint = getIntent();
+        address = newint.getStringExtra("device_a"); //receive the address of the bluetooth device
         found = false;
         btPerm = false;
 
-        animFadeOut = AnimationUtils.loadAnimation(this, R.anim.fadeout);
+        //new ConnectBT().execute(); //Call the class to connect
 
-        animFadeIn = AnimationUtils.loadAnimation(this, R.anim.fadein);
+        animFadeOut = AnimationUtils.loadAnimation(this, R.anim.fab_slide_in_from_left);
+
+        animFadeIn = AnimationUtils.loadAnimation(this, R.anim.fab_slide_out_to_right);
 
         beallitasok();
-        btSettings();
+
+        //new ConnectBT().execute(); //Call the class to connect
+        //btSettings();
+
+        //new ConnectBT().execute(); //Call the class to connect
+        //btSettings2();
     }
 
     @Override
@@ -86,8 +108,6 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
-
-
 
     public void beallitasok(){
         csuszkaModosit();
@@ -115,9 +135,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
+            public void onStartTrackingTouch(SeekBar seekBar) {}
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
@@ -193,22 +211,29 @@ public class MainActivity extends AppCompatActivity {
         else if(arany >=90 && arany<100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_90_fg);
         else if(arany >=100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
     }
-    public int btSettings(){
-        bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
-        PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");//Serial Port Service ID
 
-        if (bluetoothAdapter == null) {
+    public int btSettings2(){
+        // init.
+        isBtConnected = false;
 
-            Toast.makeText(getApplicationContext(),"Device doesnt Support Bluetooth",Toast.LENGTH_SHORT).show();
-            statusz.setText("A telefon nem támogatja a Bluetooth-t!");
+        // BT adapter lekerese
+        myBluetooth = BluetoothAdapter.getDefaultAdapter();
+
+        // ha nincs BT adapter...
+        if(myBluetooth == null)
+        {
+            Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
             return 0;
         }
-
-        if(!bluetoothAdapter.isEnabled())   //ha van adapter -> jog kerese
+        // ha nincs bekapcsolva a BT
+        else if(!myBluetooth.isEnabled())
         {
-            Intent enableAdapter = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            //requestPermissions();
-            startActivityForResult(enableAdapter, 0);
+            //Ask to the user turn the bluetooth on
+            Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+
+            startActivityForResult(turnBTon,1);
+
+            // regi Android verziok jogkerese workaround
             if (Build.VERSION.SDK_INT > 22){
                 String[] allPermissionNeeded = {
                         Manifest.permission.BLUETOOTH,
@@ -223,51 +248,54 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
         // parositott eszkozok lekerese
+        pairedDevices = myBluetooth.getBondedDevices();
 
-        Set bondedDevices = bluetoothAdapter.getBondedDevices();
-
-
-
-        if(bondedDevices.isEmpty()){
-            //Toast.makeText(getApplicationContext(),"Először párosítani kell az eszközt!",Toast.LENGTH_SHORT).show();
-            Log.d("HIBA","bondedDevices.isEmpty()");
-            statusz.setText("Nincs kapcsolat");
-        } else {
-
-            for (Iterator<BluetoothDevice> iterator = bondedDevices.iterator(); iterator.hasNext();) {
-                BluetoothDevice bt = iterator.next();
-                if(bt.getName().equals(arduinoBtName)) //Replace with iterator.getName() if comparing Device names.
-                {
-                    device=bt; //device is an object of type BluetoothDevice
-                    found=true;
-                    break;
-                }
-            }
-            if(found){  //megvan a BT eszkoz
-                try {
-                    bluetoothSocket = device.createRfcommSocketToServiceRecord(PORT_UUID);
-                    bluetoothSocket.connect();
-                    Toast.makeText(getApplicationContext(),"Eszköz csatlakoztatva.",Toast.LENGTH_SHORT).show();
-                    statusz.setText("Kapcsolódva");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            else{
-                Toast.makeText(getApplicationContext(),"Nem található az eszköz.",Toast.LENGTH_SHORT).show();
-                statusz.setText("Nincs kapcsolat");
-
+        // ha vannak parositott eszkozok...
+        if (pairedDevices.size()>0){
+            for(BluetoothDevice bt : pairedDevices)
+            {
+                // ha a parositott eszkoz neve megegyezik az elore definialt ARDUINO BT eszkoz nevevel...
+                if(bt.getName().equals(arduinoBtName)) address = bt.getAddress();
             }
         }
-        return 1;
+        else{
+            //nincsenek parositott eszkozok
+            Toast.makeText(getApplicationContext(), "No Paired Bluetooth Devices Found.", Toast.LENGTH_LONG).show();
+            return 0;
+        }
+
+        // csatlakozas megkiserlese
+        try
+        {
+            if (btSocket == null || !isBtConnected)
+            {
+                BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);         //connects to the device's address and checks if it's available
+                btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);   //create a RFCOMM (SPP) connection
+                BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                btSocket.connect();//start connection
+                isBtConnected = btSocket.isConnected();
+            }
+        }
+        catch (IOException e)
+        {
+            //ConnectSuccess = false;//if the try failed, you can check the exception here
+            return 0;
+        }
+
+
+        if(isBtConnected) return 1;
+        else return 0;
     }
+
+
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         Log.d("HIBA","onRequestPermissionsResult-ban vagyunk.");
         //Toast.makeText(getApplicationContext(),"onRequestPermissionsResult-ban vagyunk.",Toast.LENGTH_SHORT).show();
 
-        btSettings();
+        //btSettings();
 
         /*if(hasAllPermissionsGranted(grantResults)){
             // all permissions granted
@@ -285,7 +313,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void tvStatuszOnClick(View view) {
-        btSettings();
+        int retval = btSettings2();
+
+        if(retval == 1) statusz.setText("Csatlakozva.");
+        else statusz.setText("Nincs kapcsolat.");
     }
 
     public boolean hasAllPermissionsGranted(@NonNull int[] grantResults) {
@@ -296,4 +327,22 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+
+    public void BTKuldes(View view)
+    {
+        if (btSocket!=null)
+        {
+            try
+            {
+                btSocket.getOutputStream().write("TESZT".getBytes(),0,5);
+            }
+            catch (IOException e)
+            {
+                Toast.makeText(this.getApplicationContext(),"BT ERROR", Toast.LENGTH_LONG);
+            }
+        }
+    }
 }
+
+
+
