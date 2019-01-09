@@ -54,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
     ImageView ivPohar;
     Animation animFadeOut;
     Animation animFadeIn;
+    int ADAT_MENNYISEG;
+    int ADAT_ARANY;
 
     Button On, Off, Discnt, Abt;
     String address = null;
@@ -176,10 +178,12 @@ public class MainActivity extends AppCompatActivity {
         fabmenu.close(true);
     }
     public void csuszkaModosit(){
-        int arany = sbArany.getProgress();
-        int arany_szoda = sbArany.getMax()-arany;
+        double[] aranyok = {0, 0.33, 0.5, 0.66, 1};
+
         int mennyiseg = sbMennyiseg.getProgress() + 1;
-        float mennyiseg_bor = ((float)mennyiseg*arany)/100;
+        int arany = sbArany.getProgress();
+        double arany_szoda = mennyiseg - (mennyiseg * aranyok[arany]);//sbArany.getMax()-arany;
+        double mennyiseg_bor = ((float)mennyiseg*aranyok[arany]);
 
         //bor mennyiseg 1 tizedesjegyre
         BigDecimal bd_bor = new BigDecimal(mennyiseg_bor);
@@ -190,8 +194,26 @@ public class MainActivity extends AppCompatActivity {
         BigDecimal bd_szoda = new BigDecimal(mennyiseg - mennyiseg_bor_bd);
         bd_szoda = bd_szoda.setScale(1, RoundingMode.HALF_UP);
         double mennyiseg_szoda_bd = bd_szoda.doubleValue();
+        double bor_szazalek = (((mennyiseg*aranyok[arany]) / mennyiseg) * 100);
+        arany_szoda = 100 - bor_szazalek;
 
-        tvAranyAllas.setText(mennyiseg+"dl fröccs, "+arany+"% ("+ mennyiseg_bor_bd +" dl) bor / "+arany_szoda+"% ("+ mennyiseg_szoda_bd + " dl) szóda");
+        tvAranyAllas.setText(mennyiseg+"dl fröccs, "+ bor_szazalek +"% ("+ mennyiseg_bor_bd +" dl) bor / "+arany_szoda+"% ("+ mennyiseg_szoda_bd + " dl) szóda");
+
+        // Kuldendo adatok beallitasa
+        ADAT_MENNYISEG = mennyiseg;
+        if(arany == 0) ADAT_ARANY = 8;
+        else if(arany == 1) ADAT_ARANY = 4;
+        else if(arany == 2) ADAT_ARANY = 5;
+        else if(arany == 3) ADAT_ARANY = 6;
+        else if(arany == 4) ADAT_ARANY = 7;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("ELKÜLDÖTT ADAT: ");
+        sb.append(ADAT_MENNYISEG);
+        sb.append(ADAT_ARANY);
+        String s = sb.toString();
+
+        Toast.makeText(this.getApplicationContext(), s, Toast.LENGTH_SHORT).show();
 
         // IV pohar beallitasok
         setIvPoharArany(arany);
@@ -199,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setIvPoharArany(int arany){
+        /*
         if(arany<10) ivPohar.setImageResource(R.mipmap.glass_arany_progress_0_fg);
         else if(arany>=10 && arany <20) ivPohar.setImageResource(R.mipmap.glass_arany_progress_10_fg);
         else if(arany >=20 && arany<30) ivPohar.setImageResource(R.mipmap.glass_arany_progress_20_fg);
@@ -210,6 +233,14 @@ public class MainActivity extends AppCompatActivity {
         else if(arany >=80 && arany<90) ivPohar.setImageResource(R.mipmap.glass_arany_progress_80_fg);
         else if(arany >=90 && arany<100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_90_fg);
         else if(arany >=100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
+        */
+
+        if(arany==0) ivPohar.setImageResource(R.mipmap.glass_arany_progress_0_fg);
+        else if(arany == 1) ivPohar.setImageResource(R.mipmap.glass_arany_progress_30_fg);
+        else if(arany == 2) ivPohar.setImageResource(R.mipmap.glass_arany_progress_50_fg);
+        else if(arany == 3) ivPohar.setImageResource(R.mipmap.glass_arany_progress_70_fg);
+        else if(arany == 4) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
+
     }
 
     public int btSettings2(){
@@ -330,11 +361,19 @@ public class MainActivity extends AppCompatActivity {
 
     public void BTKuldes(View view)
     {
-        if (btSocket!=null)
+        if (btSocket!=null && isBtConnected)
         {
             try
             {
-                btSocket.getOutputStream().write("TESZT".getBytes(),0,5);
+                StringBuilder sb = new StringBuilder();
+                sb.append(ADAT_MENNYISEG);
+                sb.append(ADAT_ARANY);
+                String s = sb.toString();
+
+                // ADAT KULDESE
+                btSocket.getOutputStream().write(s.getBytes(),0,5);
+                Toast.makeText(this.getApplicationContext(),"ELKULDOTT ADAT: " + s, Toast.LENGTH_LONG);
+
             }
             catch (IOException e)
             {

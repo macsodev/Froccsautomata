@@ -50,11 +50,12 @@
         android:id="@+id/menu"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginBottom="10dp"
+        android:layout_alignParentBottom="true"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
+        android:layout_marginBottom="10dp"
+        android:clickable="false"
         app:layout_anchor="@+id/include"
         app:layout_anchorGravity="right|bottom"
         app:menu_icon="@drawable/glass_white"
@@ -93,8 +94,8 @@
         fab:menu_shadowColor="#66000000"
         fab:menu_shadowRadius="4dp"
         fab:menu_shadowXOffset="1dp"
-        fab:menu_shadowYOffset="3dp"
 
+        fab:menu_shadowYOffset="3dp"
         fab:menu_showShadow="true"
         tools:layout_editor_absoluteY="3dp">
 
