@@ -7,10 +7,13 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -21,11 +24,17 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.clans.fab.FloatingActionMenu;
+import com.mingle.entity.MenuEntity;
+import com.mingle.sweetpick.BlurEffect;
+import com.mingle.sweetpick.RecyclerViewDelegate;
+import com.mingle.sweetpick.SweetSheet;
+import com.race604.drawable.wave.WaveDrawable;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -59,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button On, Off, Discnt, Abt;
     String address = null;
+    String name = null;
     private Set<BluetoothDevice> pairedDevices;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -66,6 +76,15 @@ public class MainActivity extends AppCompatActivity {
     private boolean isBtConnected = false;
     //SPP UUID. Look for it
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    private RelativeLayout rl;
+    private AppBarLayout abl;
+
+    SweetSheet mSweetSheet;
+    final ArrayList<MenuEntity> BTList = new ArrayList<>();
+
+    ImageView imageView2;
+    WaveDrawable chromeWave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,12 +115,14 @@ public class MainActivity extends AppCompatActivity {
         animFadeIn = AnimationUtils.loadAnimation(this, R.anim.fab_slide_out_to_right);
 
         beallitasok();
+        btSettings2();
 
-        //new ConnectBT().execute(); //Call the class to connect
-        //btSettings();
+        rl = findViewById(R.id.rl);
+        abl = findViewById(R.id.abl);
+        setupRecyclerView();
 
-        //new ConnectBT().execute(); //Call the class to connect
-        //btSettings2();
+        imageView2 = findViewById(R.id.iv_pohar);
+        chromeWave = new WaveDrawable(this, R.drawable.glass_with_wine_launcher_circle);
     }
 
     @Override
@@ -111,7 +132,49 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private void setupRecyclerView() {
+        // uj sweetsheet a relative layoutra
+        mSweetSheet = new SweetSheet(rl);
+        // bluetooth lista beallitasa a sheetre
+        mSweetSheet.setMenuList(BTList);
+        // recyclerView beallitasa
+        mSweetSheet.setDelegate(new RecyclerViewDelegate(false));
+        // hattereffekt beallitasa
+        mSweetSheet.setBackgroundEffect(new BlurEffect(8));
+        // menu item kattintasa eseten...
+        mSweetSheet.setOnMenuItemClickListener(new SweetSheet.OnMenuItemClickListener() {
+            @Override
+            public boolean onItemClick(int position, MenuEntity menuEntity1) {
+                // Adott listaelem nevevel az adott BT cim beallitasa, majd a sweetsheet becsukasa
+                if ((pairedDevices != null) && (pairedDevices.size()>0)){
+                    for(BluetoothDevice bt : pairedDevices)
+                    {
+                        // ha a parositott eszkoz neve megegyezik az elore definialt ARDUINO BT eszkoz nevevel...
+
+                        if(bt.getName().equals(menuEntity1.title)){
+                            address = bt.getAddress();
+                            name = bt.getName();
+                            break;
+                        }
+                    }
+                    btConnect();
+                }
+
+
+                mSweetSheet.toggle();
+                if(mSweetSheet.isShow() == true) LayoutRendezesek(true);
+                else LayoutRendezesek(false);
+
+                return false;
+            }
+        });
+
+
+    }
+
     public void beallitasok(){
+
+
         csuszkaModosit();
 
         sbArany.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -288,7 +351,16 @@ public class MainActivity extends AppCompatActivity {
             for(BluetoothDevice bt : pairedDevices)
             {
                 // ha a parositott eszkoz neve megegyezik az elore definialt ARDUINO BT eszkoz nevevel...
-                if(bt.getName().equals(arduinoBtName)) address = bt.getAddress();
+                MenuEntity me = new MenuEntity();
+                me.iconId = R.drawable.glass;
+                me.title = bt.getName();
+                BTList.add(me);
+
+                // DEFAULT ARDUINO BT NEV KIVALASZTASA CIMNEK, HA VAN
+                if(bt.getName().equals(arduinoBtName)) {
+                    address = bt.getAddress();
+                    name = bt.getName();
+                }
             }
         }
         else{
@@ -298,29 +370,37 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // csatlakozas megkiserlese
-        try
-        {
-            if (btSocket == null || !isBtConnected)
-            {
-                BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);         //connects to the device's address and checks if it's available
-                btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);   //create a RFCOMM (SPP) connection
-                BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-                btSocket.connect();//start connection
-                isBtConnected = btSocket.isConnected();
-            }
-        }
-        catch (IOException e)
-        {
-            //ConnectSuccess = false;//if the try failed, you can check the exception here
-            return 0;
-        }
+        btConnect();
 
 
         if(isBtConnected) return 1;
         else return 0;
     }
 
+    public int btConnect(){
+        statusz.setText("Kapcsolódás: " + name);
 
+        try
+        {
+            if ((btSocket == null || !isBtConnected) && address!=null)
+            {
+                BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);         //connects to the device's address and checks if it's available
+                btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);   //create a RFCOMM (SPP) connection
+                BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                btSocket.connect();//start connection
+                isBtConnected = btSocket.isConnected();
+
+                statusz.setText("Kapcsolódva: " + name);
+            }
+        }
+        catch (IOException e)
+        {
+            //ConnectSuccess = false;//if the try failed, you can check the exception here
+            statusz.setText("Nincs kapcsolat");
+            return 0;
+        }
+        return 1;
+    }
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         Log.d("HIBA","onRequestPermissionsResult-ban vagyunk.");
@@ -344,10 +424,28 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void tvStatuszOnClick(View view) {
-        int retval = btSettings2();
+        mSweetSheet.toggle();
+        if(mSweetSheet.isShow() == true) LayoutRendezesek(true);
+        else LayoutRendezesek(false);
+        }
 
-        if(retval == 1) statusz.setText("Csatlakozva.");
-        else statusz.setText("Nincs kapcsolat.");
+    public void LayoutRendezesek(boolean sweetbarfront){
+        if(sweetbarfront == false){
+            //rl.setClickable(false);
+            rl.setVisibility(View.GONE);
+
+            findViewById(R.id.cl).bringToFront();
+            abl.bringToFront();
+            findViewById(R.id.include).bringToFront();
+            findViewById(R.id.menu).bringToFront();
+
+        }
+        else {
+            rl.bringToFront();
+            //rl.setClickable(true);
+            rl.setVisibility(View.VISIBLE);
+
+        }
     }
 
     public boolean hasAllPermissionsGranted(@NonNull int[] grantResults) {
@@ -380,8 +478,56 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this.getApplicationContext(),"BT ERROR", Toast.LENGTH_LONG);
             }
         }
+
+
+
+
+        imageView2.setImageDrawable(chromeWave);
+        chromeWave.setLevel(5000);
+        //chromeWave.setIndeterminate(true);
+        new MyTask().execute();
+
+
+
+
+    }
+
+    public void onClickSweetSheet(View view) {
+        if(mSweetSheet.isShow() == true) LayoutRendezesek(true);
+        else LayoutRendezesek(false);
+    }
+
+    class MyTask extends AsyncTask<Integer, Integer, String> {
+        @Override
+        protected String doInBackground(Integer... params) {
+            for(int i=0;10000>i;i+=50){
+
+                try {
+                    Thread.sleep(3);
+                    publishProgress(i);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return "Task Completed.";
+        }
+        @Override
+        protected void onPostExecute(String result) {
+
+        }
+        @Override
+        protected void onPreExecute() {
+
+        }
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            chromeWave.setLevel(values[0]);
+        }
     }
 }
+
+
 
 
 

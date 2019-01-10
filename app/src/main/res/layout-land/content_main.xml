@@ -30,7 +30,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:textSize="16sp"
+        android:textSize="16dp"
         app:layout_constraintBottom_toTopOf="@+id/button_kuldes"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -98,7 +98,7 @@
                 android:layout_alignParentTop="true"
                 android:layout_marginEnd="54dp"
                 android:layout_marginTop="144dp"
-                android:max="4"
+                android:max="2"
                 android:progress="2"
                 android:visibility="visible" />
 
@@ -152,8 +152,8 @@
                 android:layout_alignParentTop="true"
                 android:layout_alignStart="@+id/seekbar_mennyiseg"
                 android:layout_alignTop="@+id/seekbar_mennyiseg"
-                android:max="100"
-                android:progress="50"
+                android:max="4"
+                android:progress="4"
                 android:visibility="visible"
                 tools:layout_editor_absoluteX="126dp"
                 tools:layout_editor_absoluteY="93dp" />
