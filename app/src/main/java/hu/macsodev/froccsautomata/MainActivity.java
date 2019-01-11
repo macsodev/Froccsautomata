@@ -20,8 +20,11 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -86,6 +89,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageView2;
     WaveDrawable chromeWave;
 
+    Animation fadeOut = new AlphaAnimation(1, 0);
+    Animation fadeIn = new AlphaAnimation(0, 1);
+    int animInProgress;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -122,7 +129,14 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
 
         imageView2 = findViewById(R.id.iv_pohar);
-        chromeWave = new WaveDrawable(this, R.drawable.glass_with_wine_launcher_circle);
+        chromeWave = new WaveDrawable(this, R.drawable.glass_full_nagy_png);
+
+        fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
+        fadeOut.setStartOffset(1000);
+        fadeOut.setDuration(1000);
+        fadeIn.setInterpolator(new DecelerateInterpolator()); //add this
+        fadeIn.setDuration(1000);
+        animInProgress = 0;
     }
 
     @Override
@@ -298,12 +312,13 @@ public class MainActivity extends AppCompatActivity {
         else if(arany >=100) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
         */
 
-        if(arany==0) ivPohar.setImageResource(R.mipmap.glass_arany_progress_0_fg);
-        else if(arany == 1) ivPohar.setImageResource(R.mipmap.glass_arany_progress_30_fg);
-        else if(arany == 2) ivPohar.setImageResource(R.mipmap.glass_arany_progress_50_fg);
-        else if(arany == 3) ivPohar.setImageResource(R.mipmap.glass_arany_progress_70_fg);
-        else if(arany == 4) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
-
+        if(animInProgress == 0) {
+            if (arany == 0) ivPohar.setImageResource(R.mipmap.glass_arany_progress_0_fg);
+            else if (arany == 1) ivPohar.setImageResource(R.mipmap.glass_arany_progress_30_fg);
+            else if (arany == 2) ivPohar.setImageResource(R.mipmap.glass_arany_progress_50_fg);
+            else if (arany == 3) ivPohar.setImageResource(R.mipmap.glass_arany_progress_70_fg);
+            else if (arany == 4) ivPohar.setImageResource(R.mipmap.glass_arany_progress_100_fg);
+        }
     }
 
     public int btSettings2(){
@@ -469,7 +484,7 @@ public class MainActivity extends AppCompatActivity {
                 String s = sb.toString();
 
                 // ADAT KULDESE
-                btSocket.getOutputStream().write(s.getBytes(),0,5);
+                btSocket.getOutputStream().write(s.getBytes(),0,2);
                 Toast.makeText(this.getApplicationContext(),"ELKULDOTT ADAT: " + s, Toast.LENGTH_LONG);
 
             }
@@ -480,12 +495,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
-
-        imageView2.setImageDrawable(chromeWave);
-        chromeWave.setLevel(5000);
-        //chromeWave.setIndeterminate(true);
-        new MyTask().execute();
+        // ivPohar animacio elkezdese
+        if(animInProgress == 0) {       // ha nem fut eppen thread az animacioval
+            ivPohar.startAnimation(fadeOut);
+            chromeWave.setLevel(5000);
+            chromeWave.setWaveAmplitude(30);
+            chromeWave.setWaveSpeed(30);
+            //chromeWave.setIndeterminate(true);
+            new BTKuldesAnim().execute();
+        }
 
 
 
@@ -497,32 +515,60 @@ public class MainActivity extends AppCompatActivity {
         else LayoutRendezesek(false);
     }
 
-    class MyTask extends AsyncTask<Integer, Integer, String> {
+    class BTKuldesAnim extends AsyncTask<Integer, Integer, String> {
+
         @Override
         protected String doInBackground(Integer... params) {
-            for(int i=0;10000>i;i+=50){
-
+            if(animInProgress == 1) {
                 try {
-                    Thread.sleep(3);
-                    publishProgress(i);
+                    Thread.sleep(1500);
+                    publishProgress(-2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                for (int i = 5000; 9200 > i; i += 45) {
+                    try {
+                        Thread.sleep(50);
+                        publishProgress(i);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    publishProgress(-1);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-
             return "Task Completed.";
         }
+
         @Override
         protected void onPostExecute(String result) {
+            if(animInProgress == 1) ivPohar.startAnimation(fadeIn);
+            animInProgress--;
+            setIvPoharArany(sbArany.getProgress());
+
 
         }
+
         @Override
         protected void onPreExecute() {
-
+                animInProgress++;
         }
+
         @Override
         protected void onProgressUpdate(Integer... values) {
-            chromeWave.setLevel(values[0]);
+            if(animInProgress == 1) {
+                if (values[0] >= 0 ) chromeWave.setLevel(values[0]);
+                else if (values[0] == -2) {
+                    imageView2.setImageDrawable(chromeWave);
+                    ivPohar.startAnimation(fadeIn);
+                }
+                else if (values[0] == -1) ivPohar.startAnimation(fadeOut);
+            }
         }
     }
 }
